@@ -1,8 +1,11 @@
-# Resource Monitoring Dashboard
+# Resource Monitoring Dashboard For Linux
 
-A real-time system resource monitoring dashboard for tracking CPU, RAM, Disk, GPU usage, and running processes. The backend (Python/FastAPI) streams live stats over Server-Sent Events and serves the React frontend as static files, so the whole app runs as a single service.
+A real-time system resource monitoring dashboard for linux, tracking CPU, RAM, Disk, GPU usage, and running processes. The backend (Python/FastAPI) streams live stats over Server-Sent Events and serves the React frontend as static files, so the whole app runs as a single service.
+
+> **Platform support: Linux only (officially).** The backend relies on `psutil.disk_usage("/")`, which assumes a Unix-style root filesystem, and production deployment (`resource-dash.service`) is a systemd unit that also shells out to `nvidia-smi`. It will likely run for local dev on Windows via `python main.py` (FastAPI/uvicorn/psutil are cross-platform, and the GPU collector has a Windows WMI fallback), but this is untested and unsupported — expect rough edges around disk stats and no systemd-based deployment path.
 
 <!-- TODO: add screenshot -->
+
 ![Dashboard screenshot](./docs/screenshot.png)
 
 ## Project Structure

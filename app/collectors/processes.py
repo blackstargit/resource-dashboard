@@ -7,6 +7,7 @@ The module-level _process_cache retains psutil.Process objects between
 requests so that cpu_percent() has a meaningful prior-interval baseline
 (first call always returns 0.0 — subsequent calls return real deltas).
 """
+import os
 import time
 from typing import Any, Dict
 
@@ -118,3 +119,23 @@ def get_top_processes(limit: int = 25, sort_by: str = "cpu") -> Dict[str, Any]:
         "gpu_available": NVML_AVAILABLE,
         "timestamp": time.time(),
     }
+
+
+def kill_process(pid: int) -> None:
+    """
+    Terminate a process by PID (SIGTERM).
+
+    Raises ProcessLookupError if the PID doesn't exist, PermissionError if
+    denied or if the PID is this backend's own process.
+    """
+    if not PSUTIL_AVAILABLE:
+        raise RuntimeError("psutil not available")
+    if pid == os.getpid():
+        raise PermissionError("Refusing to terminate the monitoring backend itself.")
+
+    try:
+        psutil.Process(pid).terminate()
+    except psutil.NoSuchProcess:
+        raise ProcessLookupError(f"No process with pid {pid}")
+    except psutil.AccessDenied:
+        raise PermissionError(f"Access denied to terminate pid {pid}")

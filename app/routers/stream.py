@@ -18,6 +18,7 @@ from app.collectors.ram import get_ram_stats
 from app.collectors.disk import get_disk_stats
 from app.collectors.gpu import get_gpu_stats
 from app.collectors.processes import get_process_stats
+from app.collectors.system import get_system_stats
 from app.core.logging import get_logger
 
 logger = get_logger("routers.stream")
@@ -44,6 +45,7 @@ async def stream_system_stats(interval: Optional[float] = 1.0):
                     "disk": get_disk_stats(),
                     "gpus": get_gpu_stats(),
                     "process": get_process_stats(),
+                    "system": get_system_stats(),
                     "timestamp": asyncio.get_event_loop().time(),
                 }
                 yield f"data: {json.dumps(payload)}\n\n"

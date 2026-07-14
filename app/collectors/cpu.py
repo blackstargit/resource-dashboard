@@ -22,9 +22,11 @@ def get_cpu_stats() -> dict:
         return {"error": "psutil not available"}
 
     try:
+        per_core = psutil.cpu_percent(interval=0.1, percpu=True)
         cpu_freq = psutil.cpu_freq()
         return {
-            "percent": round(psutil.cpu_percent(interval=0.1), 2),
+            "percent": round(sum(per_core) / len(per_core), 2) if per_core else 0.0,
+            "per_core_percent": [round(p, 2) for p in per_core],
             "count": psutil.cpu_count(),
             "freq_mhz": round(cpu_freq.current, 2) if cpu_freq else None,
             "freq_max_mhz": round(cpu_freq.max, 2) if cpu_freq else None,

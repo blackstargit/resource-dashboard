@@ -95,4 +95,4 @@ git submodule update --init --recursive
 cd frontend && pnpm build && cd ..
 ```
 
-The backend automatically serves the built frontend files when available. See [frontend/README.md](./frontend/README.md) for frontend-specific development instructions (dev server, structure, env vars).
+The backend automatically serves the built frontend files when available. See [frontend/README.md](https://github.com/blackstargit/resource-dashboard-frontend/blob/main/README.md) for frontend-specific development instructions (dev server, structure, env vars).

@@ -8,6 +8,43 @@ A real-time system resource monitoring dashboard for linux, tracking CPU, RAM, D
 
 ![Dashboard screenshot](./docs/screenshot.png)
 
+## Quick Start (Docker)
+
+The whole app — frontend build + backend — runs as a single container.
+
+**Prerequisites:**
+
+- [Docker](https://docs.docker.com/engine/install/) with the Compose plugin (`docker compose version`)
+- An NVIDIA GPU with drivers installed on the host — **optional**. Without it the dashboard still runs fine, just with GPU panels reporting "unavailable".
+- **NVIDIA Container Toolkit** — only needed if you want GPU stats. On Ubuntu/Debian:
+
+  ```bash
+  curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+  curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+  sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+  sudo nvidia-ctk runtime configure --runtime=docker
+  sudo systemctl restart docker
+  ```
+
+  For other distros, see [NVIDIA's install guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html).
+
+**Run it:**
+
+```bash
+git clone --recurse-submodules <this-repo-url>
+cd resource-dashboard
+
+# Without GPU stats:
+docker compose up -d --build
+
+# With GPU stats (toolkit installed above):
+docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
+```
+
+The dashboard will be available at `http://localhost:8202`.
+
+The container monitors the **host** machine, not itself: it shares the host's PID namespace (process/CPU stats) and mounts the host's root filesystem read-only at `/host` (disk stats), so the numbers you see match what you'd get running the app directly on the host.
+
 ## Project Structure
 
 ```

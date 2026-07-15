@@ -3,6 +3,7 @@ app/collectors/disk.py
 ======================
 Disk usage and I/O statistics via psutil.
 """
+from app.core.config import DISK_PATH
 from app.core.logging import get_logger
 
 logger = get_logger("collectors.disk")
@@ -22,7 +23,7 @@ def get_disk_stats() -> dict:
         return {"error": "psutil not available"}
 
     try:
-        disk = psutil.disk_usage("/")
+        disk = psutil.disk_usage(DISK_PATH)
         disk_io = psutil.disk_io_counters()
         return {
             "total_gb": round(disk.total / (1024**3), 2),

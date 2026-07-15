@@ -1,0 +1,13 @@
+services:
+  resource-dashboard:
+    build: .
+    restart: unless-stopped
+    pid: host
+    ports:
+      - "${PORT:-8202}:${PORT:-8202}"
+    environment:
+      HOST: 0.0.0.0
+      PORT: ${PORT:-8202}
+      DISK_PATH: /host
+    volumes:
+      - /:/host:ro

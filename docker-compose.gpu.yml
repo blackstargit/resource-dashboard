@@ -1,0 +1,13 @@
+# GPU overlay — only include this file if the NVIDIA Container Toolkit is
+# installed on the host (see README Prerequisites). Without it, `docker
+# compose up` using the base docker-compose.yml alone works fine, just
+# without GPU stats.
+services:
+  resource-dashboard:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

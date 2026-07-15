@@ -21,3 +21,7 @@ API_V1_PREFIX: str = "/api/v1"
 # Two levels up from app/core/ → project root
 BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
 FRONTEND_DIST: Path = BASE_DIR / "frontend" / "dist"
+
+# Root filesystem to report disk usage for. In Docker this is set to the
+# path where the host's root filesystem is bind-mounted (see docker-compose.yml).
+DISK_PATH: str = os.getenv("DISK_PATH", "/")

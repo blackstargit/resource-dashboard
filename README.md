@@ -26,7 +26,7 @@ The whole app — frontend build + backend — runs as a single container.
   sudo systemctl restart docker
   ```
 
-  For other distros, see [NVIDIA's install guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html).
+  For other distros, see [NVIDIA&#39;s install guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html).
 
 **Run it:**
 

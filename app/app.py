@@ -23,7 +23,7 @@ def create_app() -> FastAPI:
     setup_logging()
 
     app = FastAPI(
-        title="Resource Monitor",
+        title="AI Resource Monitor",
         description=(
             "Unified system resource monitoring dashboard. "
             "Streams real-time CPU, RAM, Disk, and GPU statistics."

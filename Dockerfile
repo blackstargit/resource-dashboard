@@ -10,13 +10,14 @@ RUN pnpm build
 # ── Stage 2: backend runtime ─────────────────────────────────────────────────
 FROM python:3.12-slim
 WORKDIR /app
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev
 
 COPY app/ ./app/
 COPY main.py .
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
 EXPOSE 8202
-CMD ["python", "main.py"]
+CMD ["uv", "run", "python", "main.py"]

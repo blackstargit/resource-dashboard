@@ -1,6 +1,0 @@
-fastapi
-uvicorn[standard]
-psutil
-nvidia-ml-py
-python-dotenv
-gunicorn

@@ -1,8 +1,8 @@
-# Resource Monitoring Dashboard For Linux
+# AI Resource Monitoring Dashboard
 
-A real-time system resource monitoring dashboard for linux, tracking CPU, RAM, Disk, GPU usage, and running processes. The backend (Python/FastAPI) streams live stats over Server-Sent Events and serves the React frontend as static files, so the whole app runs as a single service.
+A real-time system resource monitoring dashboard, tracking CPU, RAM, Disk, GPU usage, and running processes. The backend (Python/FastAPI) streams live stats over Server-Sent Events and serves the React frontend as static files, so the whole app runs as a single service.
 
-> **Platform support: Linux only (officially).** The backend relies on `psutil.disk_usage("/")`, which assumes a Unix-style root filesystem, and production deployment (`resource-dash.service`) is a systemd unit that also shells out to `nvidia-smi`. It will likely run for local dev on Windows via `python main.py` (FastAPI/uvicorn/psutil are cross-platform, and the GPU collector has a Windows WMI fallback), but this is untested and unsupported — expect rough edges around disk stats and no systemd-based deployment path.
+> **Platform support: Linux and Windows.** `python main.py` runs natively on both (FastAPI/uvicorn/psutil are cross-platform, `psutil.disk_usage` works with both `/` and `C:\`-style paths, and the GPU collector has a Windows WMI fallback for non-NVIDIA cards). The Docker Compose setup (host PID namespace + root filesystem bind mount) targets Linux hosts; on Windows it runs inside Docker Desktop's Linux VM rather than monitoring the Windows host directly. systemd-based deployment (`resource-dash.service`) is Linux-only.
 
 <!-- TODO: add screenshot -->
 
@@ -71,25 +71,21 @@ The container monitors the **host** machine, not itself: it shares the host's PI
 
 ### Backend Setup
 
-1. Create a virtual environment:
+Dependencies are managed with [uv](https://docs.astral.sh/uv/). See [RUN.md](./RUN.md) for full step-by-step setup on Windows and Linux.
+
+1. Install dependencies (creates `.venv` automatically):
 
    ```bash
-   python -m venv .venv
-   source .venv/bin/activate
+   uv sync
    ```
-2. Install Python dependencies:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Set up environment variables:
+2. Set up environment variables:
 
    ```bash
    cp .env.example .env
    ```
 
    Edit `.env` if you need to override any defaults.
-4. Build the frontend:
+3. Build the frontend:
 
    ```bash
    cd frontend
@@ -97,10 +93,10 @@ The container monitors the **host** machine, not itself: it shares the host's PI
    pnpm build
    cd ..
    ```
-5. Run the server:
+4. Run the server:
 
    ```bash
-   python main.py
+   uv run python main.py
    ```
 
    The dashboard will be available at `http://localhost:8202`

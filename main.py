@@ -1,5 +1,5 @@
 """
-Resource Monitor - Entry Point
+AI Resource Monitor - Entry Point
 ================================
 Start the server:   python main.py
 Reload dev mode:    uvicorn main:app --reload

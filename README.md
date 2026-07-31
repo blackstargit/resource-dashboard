@@ -4,9 +4,18 @@ A real-time system resource monitoring dashboard, tracking CPU, RAM, Disk, GPU u
 
 > **Platform support: Linux and Windows.** `python main.py` runs natively on both (FastAPI/uvicorn/psutil are cross-platform, `psutil.disk_usage` works with both `/` and `C:\`-style paths, and the GPU collector has a Windows WMI fallback for non-NVIDIA cards). The Docker Compose setup (host PID namespace + root filesystem bind mount) targets Linux hosts; on Windows it runs inside Docker Desktop's Linux VM rather than monitoring the Windows host directly. systemd-based deployment (`resource-dash.service`) is Linux-only.
 
-<!-- TODO: add screenshot -->
-
 ![Dashboard screenshot](./docs/screenshot.png)
+
+## Features
+
+- **Live metrics** — CPU (overall + per-core, plus current/max frequency), RAM, disk usage & I/O, and multi-GPU stats (load, VRAM, temperature), all pushed over SSE at an adjustable interval.
+- **Process manager** — sortable top-process list (by CPU, memory, or GPU memory) with per-process GPU VRAM attribution, filterable by name/PID.
+- **Kill processes from the UI** — terminate a runaway process (SIGTERM) directly from the process table. The backend refuses to kill itself.
+- **System info** — uptime, boot time, and battery status (on laptops).
+- **Self-monitoring** — the dashboard reports its own CPU/memory/thread usage, so you can see the observer's own footprint.
+- **Capability-aware** — the health endpoint reports which collectors (CPU/RAM/disk/GPU) are actually available on the host, and the UI degrades gracefully (e.g. "unavailable" GPU panels) when they aren't.
+
+> **Security note:** the process-kill endpoint (`DELETE /api/v1/resources/processes/{pid}`) will terminate *any* process the backend's user has permission to signal, with no auth in front of it. Keep the dashboard bound to `127.0.0.1` or behind your own auth/reverse proxy if you expose it beyond localhost.
 
 ## Quick Start (Docker)
 
@@ -108,13 +117,16 @@ Available environment variables (see `.env.example`):
 - `PORT`: Server port (default: 8202)
 - `HOST`: Server host (default: 127.0.0.1)
 - `RELOAD`: Enable uvicorn auto-reload on code changes (default: False)
+- `DISK_PATH`: Filesystem path to report disk usage for (default: `/`). In Docker this points at the bind-mounted host root (`/host`).
 
 ## API Endpoints
 
 - `GET /`: Serves the React dashboard (index.html)
-- `GET /api/v1/resources/stats`: Current system resource usage (JSON)
-- `GET /api/v1/resources/stats/stream`: Real-time resource stats stream (Server-Sent Events)
-- `GET /api/v1/resources/health`: Monitoring service health check
+- `GET /api/v1/resources/stats`: Current snapshot of all resource stats — CPU, RAM, disk, GPUs, backend process, system (JSON)
+- `GET /api/v1/resources/stats/stream`: Real-time resource stats stream (Server-Sent Events). Query param `interval` (seconds, clamped 0.1–10, default 1.0) sets the push rate.
+- `GET /api/v1/resources/health`: Health check — reports which collectors (`cpu_monitoring`, `ram_monitoring`, `disk_monitoring`, `gpu_monitoring`) are available on this host
+- `GET /api/v1/resources/processes`: Top processes. Query params `limit` (1–100, default 25) and `sort_by` (`cpu` | `memory` | `gpu_memory`)
+- `DELETE /api/v1/resources/processes/{pid}`: Terminate a process by PID (SIGTERM). Returns 404 if the PID doesn't exist, 403 if permission is denied or the PID is the backend's own process
 
 ## Frontend
 

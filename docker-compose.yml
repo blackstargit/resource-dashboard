@@ -15,6 +15,12 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
       # Off by default -- this is the one destructive action the app exposes.
       ALLOW_PROCESS_KILL: ${ALLOW_PROCESS_KILL:-false}
+      # Passed through so .env actually controls them; defaults match config.py.
+      PBKDF2_ITERATIONS: ${PBKDF2_ITERATIONS:-300000}
+      SESSION_TTL_SECONDS: ${SESSION_TTL_SECONDS:-604800}
+      SIGNATURE_WINDOW_SECONDS: ${SIGNATURE_WINDOW_SECONDS:-120}
+      LOGIN_MAX_FAILURES: ${LOGIN_MAX_FAILURES:-5}
+      LOGIN_WINDOW_SECONDS: ${LOGIN_WINDOW_SECONDS:-300}
     volumes:
       - /:/host:ro
       # Persists the user and active sessions across restarts.

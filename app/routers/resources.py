@@ -8,7 +8,7 @@ All routes are prefixed at /api/v1/resources.
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 
-from app.core.config import API_V1_PREFIX
+from app.core.config import ALLOW_PROCESS_KILL, API_V1_PREFIX
 from app.collectors.cpu import get_cpu_stats, PSUTIL_AVAILABLE
 from app.collectors.ram import get_ram_stats
 from app.collectors.disk import get_disk_stats
@@ -42,6 +42,7 @@ async def resource_health_check():
             "ram_monitoring": PSUTIL_AVAILABLE,
             "disk_monitoring": PSUTIL_AVAILABLE,
             "gpu_monitoring": NVML_AVAILABLE,
+            "process_kill": ALLOW_PROCESS_KILL,
         },
     }
 
@@ -57,7 +58,12 @@ async def get_process_list(limit: int = 25, sort_by: str = "cpu"):
 
 @router.delete("/processes/{pid}")
 async def terminate_process(pid: int):
-    """Terminate a process by PID (SIGTERM)."""
+    """Terminate a process by PID (SIGTERM). Disabled unless ALLOW_PROCESS_KILL."""
+    if not ALLOW_PROCESS_KILL:
+        raise HTTPException(
+            status_code=403,
+            detail="Process termination is disabled. Set ALLOW_PROCESS_KILL=true.",
+        )
     try:
         kill_process(pid)
     except ProcessLookupError as exc:

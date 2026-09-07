@@ -15,7 +15,7 @@ A real-time system resource monitoring dashboard, tracking CPU, RAM, Disk, GPU u
 - **Self-monitoring** — the dashboard reports its own CPU/memory/thread usage, so you can see the observer's own footprint.
 - **Capability-aware** — the health endpoint reports which collectors (CPU/RAM/disk/GPU) are actually available on the host, and the UI degrades gracefully (e.g. "unavailable" GPU panels) when they aren't.
 
-> **Security note:** the process-kill endpoint (`DELETE /api/v1/resources/processes/{pid}`) will terminate *any* process the backend's user has permission to signal, with no auth in front of it. Keep the dashboard bound to `127.0.0.1` or behind your own auth/reverse proxy if you expose it beyond localhost.
+> **Security note:** the dashboard requires a login, and the process-kill endpoint (`DELETE /api/v1/resources/processes/{pid}`) is additionally disabled unless you set `ALLOW_PROCESS_KILL=true`. If you serve this over plain HTTP, read [Serving over plain HTTP](#serving-over-plain-http) first.
 
 ## Quick Start (Docker)
 
@@ -42,6 +42,9 @@ The whole app — frontend build + backend — runs as a single container.
 ```bash
 git clone --recurse-submodules <this-repo-url>
 cd resource-dashboard
+
+# Set the single dashboard user — compose refuses to start without these:
+cp .env.example .env    # then edit ADMIN_USERNAME / ADMIN_PASSWORD
 
 # Without GPU stats:
 docker compose up -d --build
@@ -118,10 +121,73 @@ Available environment variables (see `.env.example`):
 - `HOST`: Server host (default: 127.0.0.1)
 - `RELOAD`: Enable uvicorn auto-reload on code changes (default: False)
 - `DISK_PATH`: Filesystem path to report disk usage for (default: `/`). In Docker this points at the bind-mounted host root (`/host`).
+- `ADMIN_USERNAME` / `ADMIN_PASSWORD`: The one dashboard user. Required (min 12 characters). Seeded into SQLite on startup.
+- `DB_PATH`: SQLite file holding the user and active sessions (default: `data/dashboard.db`; `/data/dashboard.db` on the `dashboard-data` volume in Docker).
+- `SESSION_TTL_SECONDS`: Session lifetime (default: 604800 — 7 days).
+- `PBKDF2_ITERATIONS`: Password-derivation cost (default: 300000). Also the cost an eavesdropper pays per password guess, so higher is safer — but the browser computes it too, so it is a UX trade (~1s on a laptop). Changing it requires re-seeding.
+- `SIGNATURE_WINDOW_SECONDS`: How far a client clock may drift from the server before requests are refused (default: 120).
+- `LOGIN_MAX_FAILURES` / `LOGIN_WINDOW_SECONDS`: Failed logins per IP before a lockout (default: 5 per 300s).
+- `ALLOW_PROCESS_KILL`: Allow terminating host processes from the browser (default: `false`).
+
+## Authentication
+
+The dashboard is single-user. Credentials come from `.env` and are seeded into SQLite
+on every startup; `uv run python seed.py` does the same thing on demand. Change
+`ADMIN_PASSWORD` and restart (or re-run `seed.py`) to rotate the password — that also
+revokes every existing session.
+
+**The password is never transmitted, and neither is any reusable token.** The scheme is
+built for plain HTTP:
+
+1. The browser fetches a salt, an iteration count, and a one-shot challenge.
+2. It derives a *verifier* from the password locally (PBKDF2-HMAC-SHA256) and returns
+   only `HMAC(verifier, challenge)`. The challenge is burned on use, so a captured proof
+   cannot be replayed.
+3. The server returns a session **id**, which is public. The matching session **key** is
+   derived independently on both sides as `HMAC(verifier, session_id)` and never sent.
+4. Every later request carries `HMAC(session_key, method + path + timestamp + nonce)`.
+   Signatures are bound to one method and path, are single-use, and expire in seconds.
+
+So anyone reading the wire sees no password, and nothing they capture can be replayed or
+re-aimed at a different endpoint. The one destructive route, `DELETE …/processes/{pid}`,
+has its target in the signed path.
+
+Because `EventSource` cannot set headers, the live stream passes the same four values as
+query parameters (`s`, `t`, `n`, `g`) instead. They are signatures, not bearer tokens, so
+appearing in a URL costs nothing.
+
+Run `uv run python test_auth.py` to exercise the whole scheme, including replay,
+retargeting, and revocation.
+
+## Serving over plain HTTP
+
+This app is safe to serve over HTTP **against a passive eavesdropper** — someone
+reading traffic on shared wifi, or an ISP logging it. They cannot recover your password
+and cannot reuse anything they capture.
+
+It is **not** safe against an *active* attacker who can modify traffic in flight. Over
+HTTP such an attacker can rewrite the JavaScript before it reaches the browser, and no
+client-side scheme survives that. Only TLS fixes it.
+
+Given that:
+
+- Leave `ALLOW_PROCESS_KILL=false` unless you specifically need it. The container shares
+  the host PID namespace, so that endpoint can terminate host processes.
+- If you can get TLS later, nothing here needs to change — the scheme works unmodified
+  over HTTPS, and layering the two is strictly better than either alone.
+- Two ways to get HTTPS without managing a certificate yourself, if the situation
+  changes: a Cloudflare Tunnel (no inbound ports, no cert on the host) or Tailscale
+  Funnel. Both terminate TLS for you.
 
 ## API Endpoints
 
+All `/api/` endpoints below require a valid request signature and return `401` without one; `/auth/challenge` and `/auth/login` are the exceptions.
+
 - `GET /`: Serves the React dashboard (index.html)
+- `GET /api/v1/auth/challenge`: Public KDF parameters (`salt`, `iterations`) plus a one-shot `challenge`
+- `POST /api/v1/auth/login`: `{"username", "challenge", "proof"}` → `{session_id, server_time}`. `401` on a bad proof, `429` after too many failures from one IP
+- `POST /api/v1/auth/logout`: Revokes the session server-side
+- `GET /api/v1/auth/me`: `200` if the signature is valid, `401` otherwise — the frontend uses this to decide between the login form and the dashboard
 - `GET /api/v1/resources/stats`: Current snapshot of all resource stats — CPU, RAM, disk, GPUs, backend process, system (JSON)
 - `GET /api/v1/resources/stats/stream`: Real-time resource stats stream (Server-Sent Events). Query param `interval` (seconds, clamped 0.1–10, default 1.0) sets the push rate.
 - `GET /api/v1/resources/health`: Health check — reports which collectors (`cpu_monitoring`, `ram_monitoring`, `disk_monitoring`, `gpu_monitoring`) are available on this host

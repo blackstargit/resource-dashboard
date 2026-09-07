@@ -16,7 +16,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
 
 COPY app/ ./app/
-COPY main.py .
+COPY main.py seed.py ./
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
 EXPOSE 8202

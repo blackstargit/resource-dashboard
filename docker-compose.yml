@@ -9,5 +9,16 @@ services:
       HOST: 0.0.0.0
       PORT: ${PORT:-8202}
       DISK_PATH: /host
+      DB_PATH: /data/dashboard.db
+      # Set these in .env — the user is seeded on startup.
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?set ADMIN_USERNAME in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+      # Off by default -- this is the one destructive action the app exposes.
+      ALLOW_PROCESS_KILL: ${ALLOW_PROCESS_KILL:-false}
     volumes:
       - /:/host:ro
+      # Persists the user and active sessions across restarts.
+      - dashboard-data:/data
+
+volumes:
+  dashboard-data:

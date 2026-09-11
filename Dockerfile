@@ -19,5 +19,5 @@ COPY app/ ./app/
 COPY main.py seed.py ./
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
-EXPOSE 8202
+EXPOSE 8212
 CMD ["uv", "run", "python", "main.py"]

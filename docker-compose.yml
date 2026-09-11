@@ -4,10 +4,10 @@ services:
     restart: unless-stopped
     pid: host
     ports:
-      - "${PORT:-8202}:${PORT:-8202}"
+      - "${PORT:-8212}:${PORT:-8212}"
     environment:
       HOST: 0.0.0.0
-      PORT: ${PORT:-8202}
+      PORT: ${PORT:-8212}
       DISK_PATH: /host
       DB_PATH: /data/dashboard.db
       # Set these in .env — the user is seeded on startup.

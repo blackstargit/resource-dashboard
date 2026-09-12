@@ -1,0 +1,9 @@
+tunnel: 2c221404-3c22-49bb-a262-8c8a66457efe
+credentials-file: /home/blackstar/.cloudflared/2c221404-3c22-49bb-a262-8c8a66457efe.json
+
+ingress:
+  - hostname: whatsapp.boltertech.com
+    service: http://localhost:8080
+  - hostname: server.boltertech.com
+    service: http://localhost:8212
+  - service: http_status:404

@@ -3,8 +3,9 @@ services:
     build: .
     restart: unless-stopped
     pid: host
-    ports:
-      - "${PORT:-8212}:${PORT:-8212}"
+    # Host networking: no Docker bridge/NAT — uvicorn binds the host's PORT directly,
+    # like a native service. Fits a host monitor (already pid: host).
+    network_mode: host
     environment:
       HOST: 0.0.0.0
       PORT: ${PORT:-8212}

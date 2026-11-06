@@ -40,8 +40,10 @@ def get_network_stats() -> dict:
                 tx_rate = max(0.0, (io.bytes_sent - _prev["sent"]) / dt)
         _prev.update(ts=now, sent=io.bytes_sent, recv=io.bytes_recv)
         return {
-            "rx_mb_s": round(rx_rate / (1024**2), 2),
-            "tx_mb_s": round(tx_rate / (1024**2), 2),
+            # Raw bytes/sec — the frontend picks the unit, so KB/s traffic
+            # stays visible instead of rounding to 0.00 MB/s.
+            "rx_bytes_s": round(rx_rate),
+            "tx_bytes_s": round(tx_rate),
             "rx_total_gb": round(io.bytes_recv / (1024**3), 2),
             "tx_total_gb": round(io.bytes_sent / (1024**3), 2),
         }

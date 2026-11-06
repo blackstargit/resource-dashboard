@@ -9,10 +9,13 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 
 from app.core.config import ALLOW_PROCESS_KILL, API_V1_PREFIX
+import time
+
 from app.collectors.cpu import get_cpu_stats, PSUTIL_AVAILABLE
 from app.collectors.ram import get_ram_stats
-from app.collectors.disk import get_disk_stats
+from app.collectors.disk import get_disk_stats, get_all_disks
 from app.collectors.gpu import get_gpu_stats, NVML_AVAILABLE
+from app.collectors.network import get_network_stats
 from app.collectors.processes import get_process_stats, get_top_processes, kill_process
 from app.collectors.system import get_system_stats
 
@@ -26,9 +29,12 @@ async def get_all_stats():
         "cpu": get_cpu_stats(),
         "ram": get_ram_stats(),
         "disk": get_disk_stats(),
+        "disks": get_all_disks(),
         "gpus": get_gpu_stats(),
+        "network": get_network_stats(),
         "process": get_process_stats(),
         "system": get_system_stats(),
+        "timestamp": time.time(),
     }
 
 

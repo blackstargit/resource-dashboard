@@ -7,6 +7,7 @@ All routes are prefixed at /api/v1/resources.
 """
 import asyncio
 import json
+import time
 from typing import Optional
 
 from fastapi import APIRouter
@@ -15,8 +16,9 @@ from fastapi.responses import StreamingResponse
 from app.core.config import API_V1_PREFIX
 from app.collectors.cpu import get_cpu_stats
 from app.collectors.ram import get_ram_stats
-from app.collectors.disk import get_disk_stats
+from app.collectors.disk import get_disk_stats, get_all_disks
 from app.collectors.gpu import get_gpu_stats
+from app.collectors.network import get_network_stats
 from app.collectors.processes import get_process_stats
 from app.collectors.system import get_system_stats
 from app.core.logging import get_logger
@@ -43,10 +45,12 @@ async def stream_system_stats(interval: Optional[float] = 1.0):
                     "cpu": get_cpu_stats(),
                     "ram": get_ram_stats(),
                     "disk": get_disk_stats(),
+                    "disks": get_all_disks(),
                     "gpus": get_gpu_stats(),
+                    "network": get_network_stats(),
                     "process": get_process_stats(),
                     "system": get_system_stats(),
-                    "timestamp": asyncio.get_event_loop().time(),
+                    "timestamp": time.time(),
                 }
                 yield f"data: {json.dumps(payload)}\n\n"
                 await asyncio.sleep(interval)

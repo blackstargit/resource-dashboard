@@ -20,9 +20,15 @@ try:
         nvmlDeviceGetUtilizationRates,
         nvmlDeviceGetTemperature,
         nvmlDeviceGetName,
+        nvmlDeviceGetPowerUsage,
+        nvmlDeviceGetEnforcedPowerLimit,
+        nvmlDeviceGetClockInfo,
+        nvmlDeviceGetFanSpeed,
         nvmlDeviceGetComputeRunningProcesses,
         nvmlDeviceGetGraphicsRunningProcesses,
         NVML_TEMPERATURE_GPU,
+        NVML_CLOCK_SM,
+        NVML_CLOCK_MEM,
         NVMLError,
     )
     NVML_AVAILABLE = True
@@ -64,6 +70,20 @@ def get_gpu_stats() -> list:
                         name = name.decode("utf-8")
                     nvml_gpu_names.add(name)
 
+                    # Optional per-device metrics: not every board/driver
+                    # supports each, so a failure means "N/A", not an error.
+                    def _opt(fn, *args):
+                        try:
+                            return fn(handle, *args)
+                        except NVMLError:
+                            return None
+
+                    power = _opt(nvmlDeviceGetPowerUsage)          # milliwatts
+                    limit = _opt(nvmlDeviceGetEnforcedPowerLimit)  # milliwatts
+                    sm_clk = _opt(nvmlDeviceGetClockInfo, NVML_CLOCK_SM)
+                    mem_clk = _opt(nvmlDeviceGetClockInfo, NVML_CLOCK_MEM)
+                    fan = _opt(nvmlDeviceGetFanSpeed)
+
                     gpu_stats.append({
                         "gpu_id": i,
                         "name": name,
@@ -72,6 +92,11 @@ def get_gpu_stats() -> list:
                         "memory_total_gb": round(info.total / (1024**3), 2),
                         "memory_percent": round((info.used / info.total) * 100, 2),
                         "temp_celsius": temp,
+                        "power_w": round(power / 1000, 1) if power is not None else None,
+                        "power_limit_w": round(limit / 1000) if limit is not None else None,
+                        "clock_sm_mhz": sm_clk,
+                        "clock_mem_mhz": mem_clk,
+                        "fan_percent": fan,
                     })
                 except NVMLError as exc:
                     logger.error("Error getting stats for GPU %d: %s", i, exc)

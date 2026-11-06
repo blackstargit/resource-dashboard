@@ -50,39 +50,65 @@ def get_disk_stats() -> dict:
         return {"error": str(exc)}
 
 
-def get_all_disks() -> list:
-    """Return usage for every real filesystem mount, largest first."""
-    if not PSUTIL_AVAILABLE:
-        return []
+def _mount_lines() -> list[str]:
+    """`device mount fstype` lines, from the host mount namespace when possible.
 
-    mounts_file = f"{_BASE}/proc/mounts" if _BASE else "/proc/mounts"
-    disks: list = []
-    seen: set = set()
+    `/proc/1/mounts` (reachable because the container runs pid: host) lists the
+    host's real mounts without the container runtime's per-file bind-mounts
+    (e.g. the NVIDIA libraries), which otherwise masquerade as separate disks.
+    """
+    for path in ("/proc/1/mounts", f"{_BASE}/proc/mounts" if _BASE else "/proc/mounts"):
+        try:
+            with open(path) as fh:
+                lines = fh.read().splitlines()
+            if lines:
+                return lines
+        except Exception:
+            continue
     try:
-        with open(mounts_file) as fh:
-            raw = fh.read().splitlines()
-    except Exception as exc:
-        logger.warning("Could not read %s (%s); falling back to psutil.", mounts_file, exc)
-        raw = [
+        return [
             f"{p.device} {p.mountpoint} {p.fstype}"
             for p in psutil.disk_partitions(all=False)
         ]
+    except Exception:
+        return []
 
-    for line in raw:
+
+def get_all_disks() -> list:
+    """Usage per physical filesystem (one entry per device), largest first."""
+    if not PSUTIL_AVAILABLE:
+        return []
+
+    # One entry per device, keeping its shortest mountpoint (so "/" wins over a
+    # file bind-mount like "/usr/bin/nvidia-smi" on the same device).
+    primary: dict = {}
+    for line in _mount_lines():
         parts = line.split()
         if len(parts) < 3:
             continue
         device, mount, fstype = parts[0], parts[1].replace("\\040", " "), parts[2]
-        if fstype not in REAL_FS or mount in seen:
+        if fstype not in REAL_FS:
             continue
-        seen.add(mount)
-        stat_path = (_BASE + mount) if _BASE else mount
+        cur = primary.get(device)
+        if cur is None or len(mount) < len(cur[0]):
+            primary[device] = (mount, fstype)
+
+    disks: list = []
+    for device, (mount, fstype) in primary.items():
+        # Mount paths from the host namespace are host paths; stat them through
+        # the /host prefix. A psutil-fallback path already carries that prefix.
+        if _BASE and mount.startswith(_BASE):
+            display, stat_path = mount[len(_BASE):] or "/", mount
+        elif _BASE:
+            display, stat_path = mount, _BASE + mount
+        else:
+            display, stat_path = mount, mount
         try:
             usage = psutil.disk_usage(stat_path or "/")
         except Exception:
             continue
         disks.append({
-            "mount": mount,
+            "mount": display,
             "device": os.path.basename(device) or device,
             "fstype": fstype,
             "total_gb": round(usage.total / (1024**3), 2),

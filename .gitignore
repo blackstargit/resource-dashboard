@@ -3,3 +3,5 @@
 __pycache__
 *.service
 TODO.mddata/
+.env.local
+.env.production

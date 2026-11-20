@@ -49,6 +49,7 @@ wall-clock times, not just percentages.
 - **Never build, deploy, restart services, commit or push on your own** —
   only when the user asks for that exact action in that turn. Finish the code
   and tests, then hand over the exact commands (and a commit message).
+  Approving a plan that mentions committing is not a request to commit.
 - **Never read secret or credential files** (generated keys, credential
   stores). If a task seems to need one, ask.
 

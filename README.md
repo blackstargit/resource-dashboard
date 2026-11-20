@@ -68,7 +68,8 @@ The container monitors the **host** machine, not itself: it shares the host's PI
 │   └── routers/            # auth, resources, stream (SSE)
 ├── tests/test_auth.py      # auth self-check (plain script)
 ├── frontend/               # React dashboard (git submodule)
-├── docs/                   # overview, development guide, screenshot
+├── docs/                   # overview, screenshot
+├── RUN.md                  # deployment (Docker) + local development
 ├── deploy/cloudflared.yml  # reference Cloudflare Tunnel ingress
 ├── archive/                # superseded deployment files (systemd)
 ├── main.py                 # server entry point
@@ -77,7 +78,7 @@ The container monitors the **host** machine, not itself: it shares the host's PI
 
 ## Local Development
 
-See [docs/development.md](./docs/development.md) — `uv sync`, `cp .env.example .env`, build the frontend, `uv run python main.py`.
+See [RUN.md](./RUN.md) — build the frontend first (`cd frontend && pnpm install && pnpm build`), then `uv sync`, `cp .env.example .env`, `uv run python main.py`.
 
 ## Configuration
 

@@ -35,7 +35,8 @@ resource-dashboard/
 │   └── routers/               # auth.py, resources.py, stream.py (SSE)
 ├── tests/test_auth.py         # the only test — plain script, no pytest
 ├── frontend/                  # React/Vite dashboard (submodule, own repo)
-├── docs/                      # overview.md, development.md, screenshot.png
+├── docs/                      # overview.md, screenshot.png
+├── RUN.md                     # how to run: Docker deployment + local dev
 ├── deploy/cloudflared.yml     # reference tunnel ingress (secondary host)
 ├── archive/                   # superseded: resource-dash.service (systemd)
 ├── Dockerfile                 # 2 stages: pnpm build → python:3.12-slim + uv
@@ -82,7 +83,7 @@ docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build # w
 docker compose logs -f
 ```
 
-Full local setup: [docs/development.md](docs/development.md).
+Full guide: [RUN.md](RUN.md). Deployment is Docker only; running natively is for local development and needs `pnpm build` in `frontend/` first.
 
 ---
 
@@ -134,7 +135,7 @@ It is also gated by **Cloudflare Access** (Zero Trust → Access → Application
 | [RULES.md](RULES.md) | General rules for any project: dictated prompts, explain before acting, hard limits (sudo/build/commit/secrets), pre-code checks, incremental compilation, where lessons go | **always** — imported in Agent Rules |
 | [TODO.md](TODO.md) | All open work: features, cleanup, pending decisions | on demand |
 | [README.md](README.md) | User-facing: features, Docker quick start, env vars, auth explainer, API endpoints | on demand |
-| [docs/development.md](docs/development.md) | Local setup (Linux/Windows), frontend dev server, checks, uv/GPU/disk notes | on demand |
+| [RUN.md](RUN.md) | Docker deployment (first deploy, update, `.env` changes, volume, process kill) and local dev (frontend build first, dev server, checks) | on demand |
 | [docs/overview.md](docs/overview.md) | Non-technical one-page pitch | on demand |
 
 Keep each fact in exactly one of these files and link to it elsewhere.

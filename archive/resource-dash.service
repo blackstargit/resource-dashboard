@@ -1,0 +1,21 @@
+[Unit]
+Description=Resource Dashboard
+After=network.target
+
+[Service]
+User=sadiq
+Group=www-data
+WorkingDirectory=/var/www/resource-dashboard
+
+Environment="PATH=/var/www/resource-dashboard/.venv/bin"
+Environment="PYTHONPATH=/var/www/resource-dashboard"
+EnvironmentFile="/var/www/resource-dashboard/.env"
+
+ExecStart=/var/www/resource-dashboard/.venv/bin/python -m main
+
+Restart=always
+RestartSec=3
+ExecStartPre=/bin/bash -c 'until /usr/bin/nvidia-smi > /dev/null 2>&1; do echo "Waiting for GPU..."; /bin/sleep 15; done'
+
+[Install]
+WantedBy=multi-user.target

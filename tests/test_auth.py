@@ -1,5 +1,5 @@
 """
-Smallest check that the auth logic actually holds. Run: uv run python test_auth.py
+Smallest check that the auth logic actually holds. Run: uv run python -m tests.test_auth
 """
 import hashlib
 import hmac

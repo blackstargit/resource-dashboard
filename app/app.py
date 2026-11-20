@@ -96,7 +96,7 @@ def create_app() -> FastAPI:
     else:
         logger.warning(
             "Frontend dist not found at %s. "
-            "Run `npm run build` inside frontend/ first.",
+            "Run `pnpm build` inside frontend/ first.",
             FRONTEND_DIST,
         )
 

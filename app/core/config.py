@@ -12,7 +12,6 @@ load_dotenv()
 # ── Server ────────────────────────────────────────────────────────────────────
 HOST: str = os.getenv("HOST", "127.0.0.1")
 PORT: int = int(os.getenv("PORT", 8202))
-RELOAD: bool = os.getenv("RELOAD", "False")
 
 # ── API ───────────────────────────────────────────────────────────────────────
 API_V1_PREFIX: str = "/api/v1"

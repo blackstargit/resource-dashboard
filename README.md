@@ -2,7 +2,7 @@
 
 A real-time system resource monitoring dashboard, tracking CPU, RAM, Disk, GPU usage, and running processes. The backend (Python/FastAPI) streams live stats over Server-Sent Events and serves the React frontend as static files, so the whole app runs as a single service.
 
-> **Platform support: Linux and Windows.** `python main.py` runs natively on both (FastAPI/uvicorn/psutil are cross-platform, `psutil.disk_usage` works with both `/` and `C:\`-style paths, and the GPU collector has a Windows WMI fallback for non-NVIDIA cards). The Docker Compose setup (host PID namespace + root filesystem bind mount) targets Linux hosts; on Windows it runs inside Docker Desktop's Linux VM rather than monitoring the Windows host directly. systemd-based deployment (`resource-dash.service`) is Linux-only.
+> **Platform support: Linux and Windows.** `python main.py` runs natively on both (FastAPI/uvicorn/psutil are cross-platform, `psutil.disk_usage` works with both `/` and `C:\`-style paths, and the GPU collector has a Windows WMI fallback for non-NVIDIA cards). The Docker Compose setup (host PID namespace + root filesystem bind mount) targets Linux hosts; on Windows it runs inside Docker Desktop's Linux VM rather than monitoring the Windows host directly. The old systemd unit is kept for reference in `archive/`; Docker is the supported deployment.
 
 ![Dashboard screenshot](./docs/screenshot.png)
 
@@ -61,57 +61,23 @@ The container monitors the **host** machine, not itself: it shares the host's PI
 
 ```
 .
-├── app/                          # Modularized FastAPI backend
-│   ├── app.py                    # Application factory
-│   ├── collectors/               # Resource metric collectors
-│   │   ├── cpu.py
-│   │   ├── ram.py
-│   │   ├── disk.py
-│   │   ├── gpu.py
-│   │   └── processes.py
-│   ├── core/                     # Core configuration and logging
-│   │   ├── config.py
-│   │   └── logging.py
-│   └── routers/                  # API endpoint handlers
-│       ├── resources.py          # Resource stats endpoints
-│       └── stream.py             # Streaming endpoints
-├── frontend/                     # React dashboard (git submodule)
-└── main.py                       # Server entry point
+├── app/
+│   ├── app.py              # FastAPI factory: auth middleware, routers, SPA mount
+│   ├── collectors/         # cpu, ram, disk, gpu, network, processes, system
+│   ├── core/               # config (env), auth (HMAC signing scheme), logging
+│   └── routers/            # auth, resources, stream (SSE)
+├── tests/test_auth.py      # auth self-check (plain script)
+├── frontend/               # React dashboard (git submodule)
+├── docs/                   # overview, development guide, screenshot
+├── deploy/cloudflared.yml  # reference Cloudflare Tunnel ingress
+├── archive/                # superseded deployment files (systemd)
+├── main.py                 # server entry point
+└── seed.py                 # (re)seed the admin user from .env
 ```
 
-## Quick Start (Local Development)
+## Local Development
 
-### Backend Setup
-
-Dependencies are managed with [uv](https://docs.astral.sh/uv/). See [RUN.md](./RUN.md) for full step-by-step setup on Windows and Linux.
-
-1. Install dependencies (creates `.venv` automatically):
-
-   ```bash
-   uv sync
-   ```
-2. Set up environment variables:
-
-   ```bash
-   cp .env.example .env
-   ```
-
-   Edit `.env` if you need to override any defaults.
-3. Build the frontend:
-
-   ```bash
-   cd frontend
-   pnpm install
-   pnpm build
-   cd ..
-   ```
-4. Run the server:
-
-   ```bash
-   uv run python main.py
-   ```
-
-   The dashboard will be available at `http://localhost:8202`
+See [docs/development.md](./docs/development.md) — `uv sync`, `cp .env.example .env`, build the frontend, `uv run python main.py`.
 
 ## Configuration
 
@@ -119,7 +85,6 @@ Available environment variables (see `.env.example`):
 
 - `PORT`: Server port (default: 8202)
 - `HOST`: Server host (default: 127.0.0.1)
-- `RELOAD`: Enable uvicorn auto-reload on code changes (default: False)
 - `DISK_PATH`: Filesystem path to report disk usage for (default: `/`). In Docker this points at the bind-mounted host root (`/host`).
 - `ADMIN_USERNAME` / `ADMIN_PASSWORD`: The one dashboard user. Required (min 12 characters). Seeded into SQLite on startup.
 - `DB_PATH`: SQLite file holding the user and active sessions (default: `data/dashboard.db`; `/data/dashboard.db` on the `dashboard-data` volume in Docker).
@@ -156,7 +121,7 @@ Because `EventSource` cannot set headers, the live stream passes the same four v
 query parameters (`s`, `t`, `n`, `g`) instead. They are signatures, not bearer tokens, so
 appearing in a URL costs nothing.
 
-Run `uv run python test_auth.py` to exercise the whole scheme, including replay,
+Run `uv run python -m tests.test_auth` to exercise the whole scheme, including replay,
 retargeting, and revocation.
 
 ## Serving over plain HTTP

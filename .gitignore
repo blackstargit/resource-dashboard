@@ -1,7 +1,6 @@
 .venv
 .env
-__pycache__
-*.service
-TODO.mddata/
 .env.local
 .env.production
+__pycache__
+data/

@@ -8,7 +8,7 @@
 
 A real-time dashboard that watches your computer's health — CPU, RAM, disk, and GPU — and shows it to you the instant it changes. No refreshing, no digging through terminal commands, no guessing why your machine feels slow. Just open the page and watch it breathe.
 
-![Dashboard screenshot](./docs/screenshot.png)
+![Dashboard screenshot](./screenshot.png)
 
 ---
 
